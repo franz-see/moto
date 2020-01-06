@@ -108,7 +108,9 @@ class CognitoIdpUserPool(BaseModel):
 
         return user_pool_json
 
-    def create_jwt(self, client_id, username, expires_in=60 * 60, extra_data={}):
+    def create_jwt(
+        self, client_id, username, token_use, expires_in=60 * 60, extra_data={}
+    ):
         now = int(time.time())
         payload = {
             "iss": "https://cognito-idp.{}.amazonaws.com/{}".format(
@@ -116,7 +118,7 @@ class CognitoIdpUserPool(BaseModel):
             ),
             "sub": self.users[username].id,
             "aud": client_id,
-            "token_use": "id",
+            "token_use": token_use,
             "auth_time": now,
             "exp": now + expires_in,
         }
@@ -127,7 +129,7 @@ class CognitoIdpUserPool(BaseModel):
     def create_id_token(self, client_id, username):
         extra_data = self.get_user_extra_data_by_client_id(client_id, username)
         id_token, expires_in = self.create_jwt(
-            client_id, username, extra_data=extra_data
+            client_id, username, "id", extra_data=extra_data
         )
         self.id_tokens[id_token] = (client_id, username)
         return id_token, expires_in
@@ -138,7 +140,7 @@ class CognitoIdpUserPool(BaseModel):
         return refresh_token
 
     def create_access_token(self, client_id, username):
-        access_token, expires_in = self.create_jwt(client_id, username)
+        access_token, expires_in = self.create_jwt(client_id, username, "access")
         self.access_tokens[access_token] = (client_id, username)
         return access_token, expires_in
 
